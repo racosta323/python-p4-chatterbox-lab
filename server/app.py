@@ -1,5 +1,4 @@
 from flask import Flask, request, make_response, jsonify
-#figure out how to use jsonify
 from flask_cors import CORS
 from flask_migrate import Migrate
 import ipdb
@@ -33,13 +32,23 @@ def messages():
 
         return make_response(new_message.to_dict())
 
-@app.route('/messages/<int:id>', methods =['PATCH'])
-def messages_by_id(id):
+@app.route('/messages/<int:id>', methods =['PATCH', 'DELETE'])
+def patch_by_id(id):
     found_message = Message.query.get(id)
-    params = request.json
-    ipdb.set_trace()
-    setattr(found_message, 'body', params['body'])
-    return ''
+
+    if request.method == "PATCH":
+        params = request.json
+        for attr in params:
+            setattr(found_message, attr, params[attr])
+
+        db.session.commit()
+
+        return make_response(found_message.to_dict())
+    elif request.method == "DELETE":
+        db.session.delete(found_message)
+        db.session.commit()
+
+        return make_response('', 204)
 
 if __name__ == '__main__':
     app.run(port=5555)
